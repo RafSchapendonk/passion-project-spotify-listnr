@@ -1,2 +1,0 @@
-# Passion Project Raf Schapendonk
-

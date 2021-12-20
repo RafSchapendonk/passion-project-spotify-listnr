@@ -1,0 +1,25 @@
+{
+  "name": "passion-project-raf-schapendonk",
+  "version": "1.0.0",
+  "description": "",
+  "main": "service-worker.js",
+  "scripts": {
+    "build": "postcss css/styles.css -o src/styles.css"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://git.fhict.nl/I447972/passion-project-raf-schapendonk.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "autoprefixer": "^10.4.0",
+    "postcss": "^8.4.5",
+    "tailwindcss": "^3.0.7"
+  },
+  "dependencies": {
+    "postcss-cli": "^9.1.0",
+    "watch": "^1.0.2"
+  }
+}
