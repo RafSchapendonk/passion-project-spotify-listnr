@@ -40,14 +40,26 @@
     </div>
     <div id="deviceSection">
         <div class="">
-            <div class="">
-                <label for="devices" class="">Devices</label>
-                <select id="devices" class="w-96"></select>
-                <input type="button" class="border-4 border-sky-500" onclick="refreshDevices()" value="Refresh Devices">
+            <label for="devices" class="">Devices</label>
+            <select id="devices" class="w-96"></select>
+            <input type="button" class="border-4 border-sky-500" onclick="refreshDevices()" value="Refresh Devices">
 
-            </div>
         </div>
-    </div>
+        <div>
+            <label for="playlists" class="">Playlists</label>
+            <select class="w-96" id="playlists"></select>
+            <input class="" type="button" onclick="refreshPlaylists()" value="Refresh Playlists">
+        </div>
+        <div class="mb-3">
+            <label for="tracks" class="">Tracks</label>
+            <select id="tracks" class="w-96">
+            </select>
+            <input class="" type="button" onclick="fetchTracks()" value="Fetch Tracks">
+        </div>
+        <div class="">
+            <label for="tracks" class="">Album</label>
+            <input id="album" class="">
+        </div>
 </body>
 
 <footer class="bg-green-700 text-3xl text-white text-center fixed inset-x-0 bottom-0 p-4">

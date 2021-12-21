@@ -67,9 +67,13 @@ var redirect_uri = "http://127.0.0.1:5500/src/index.html"
 var client_id = "f0f0c66ea501495e8e9755f63932633c";
 var client_secret = "afe7526d836b40079015b2c7c9673fe7";
 
+var currentPlaylist = "";
+
 const AUTHORIZE = "https://accounts.spotify.com/authorize"
 const TOKEN = "https://accounts.spotify.com/api/token"
 const DEVICES = "https://api.spotify.com/v1/me/player/devices";
+const PLAYLISTS = "https://api.spotify.com/v1/me/playlists";
+const TRACKS = "https://api.spotify.com/v1/playlists/{{PlaylistId}}/tracks";
 
 function onPageLoad() {
     // client_id = localStorage.getItem("client_id");
@@ -77,6 +81,19 @@ function onPageLoad() {
 
     if (window.location.search.length > 0) {
         handleRedirect();
+    }
+    else {
+        access_token = localStorage.getItem("access_token")
+        if (access_token == null) {
+            //Acess token unavailable so present token section
+            document.getElementById("tokenSection").style.display = 'block';
+        }
+        else {
+            //Access token available present device section
+            document.getElementById("deviceSection").style.display = 'block';
+            refreshDevices();
+            refreshPlaylists();
+        }
     }
 }
 
@@ -160,6 +177,10 @@ function refreshDevices() {
     callApi("GET", DEVICES, null, handleDevicesResponse);
 }
 
+function refreshPlaylists() {
+    callApi("GET", PLAYLISTS, null, handlePlaylistsResponse);
+}
+
 function handleDevicesResponse() {
     if (this.status == 200) {
         var data = JSON.parse(this.responseText);
@@ -174,6 +195,61 @@ function handleDevicesResponse() {
         console.log(this.responseText);
         alert(this.responseText);
     }
+}
+
+function handlePlaylistsResponse() {
+    if (this.status == 200) {
+        var data = JSON.parse(this.responseText);
+        console.log(data);
+        removeAllItems("playlists");
+        data.items.forEach(item => addPlaylist(item));
+        document.getElementById('playlists').value = currentPlaylist;
+    }
+    else if (this.status == 401) {
+        refreshAccessToken()
+    }
+    else {
+        console.log(this.responseText);
+        alert(this.responseText);
+    }
+}
+
+function addPlaylist(item) {
+    let node = document.createElement("option");
+    node.value = item.id;
+    node.innerHTML = item.name + " (" + item.tracks.total + ")";
+    document.getElementById("playlists").appendChild(node);
+}
+
+function fetchTracks() {
+    let playlist_id = document.getElementById("playlists").value;
+    if (playlist_id.length > 0) {
+        url = TRACKS.replace("{{PlaylistId}}", playlist_id);
+        callApi("GET", url, null, handleTracksResponse);
+    }
+}
+
+function handleTracksResponse() {
+    if (this.status == 200) {
+        var data = JSON.parse(this.responseText);
+        console.log(data);
+        removeAllItems("tracks");
+        data.items.forEach((item, index) => addTrack(item, index));
+    }
+    else if (this.status == 401) {
+        refreshAccessToken()
+    }
+    else {
+        console.log(this.responseText);
+        alert(this.responseText);
+    }
+}
+
+function addTrack(item, index) {
+    let node = document.createElement("option");
+    node.value = index;
+    node.innerHTML = item.track.name + " (" + item.track.artists[0].name + ")";
+    document.getElementById("tracks").appendChild(node)
 }
 
 function refreshAccessToken() {
