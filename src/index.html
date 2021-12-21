@@ -20,8 +20,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
 </head>
 
-<body>
+<body onload="onPageLoad()">
     <div id="root"></div>
+    <div class="">
+        <div id="tokenSection" class="">
+            <div class="">
+                <div class="">
+                    <label for="clientId" class="">Client id</label>
+                    <input type="text" class="border-4 border-sky-500" id="clientId" placeholder="">
+                </div>
+                <div class="mb-3">
+                    <label for="clientSecret" class="">Client secret</label>
+                    <input type="text" class="border-4 border-sky-500" id="clientSecret" placeholder="">
+                </div>
+                <input class="" type="button" onclick="requestAuthorization()" value="Request Authorization">
+            </div>
+        </div>
+    </div>
 </body>
 
 <footer class="bg-green-700 text-3xl text-white text-center fixed inset-x-0 bottom-0 p-4">

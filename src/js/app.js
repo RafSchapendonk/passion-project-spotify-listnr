@@ -37,7 +37,6 @@ $(document).ready(function () {
 });
 
 //Service worker
-
 //See if the browser supports Service Workers, if so try to register one
 if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("service-worker.js").then(function (registering) {
@@ -52,29 +51,6 @@ if ("serviceWorker" in navigator) {
     console.log("Browser: I don't support Service Workers :(");
 }
 
-
-//Asking for permission with the Notification API
-if (typeof Notification !== typeof undefined) { //First check if the API is available in the browser
-    Notification.requestPermission().then(function (result) {
-        //If accepted, then save subscriberinfo in database
-        if (result === "granted") {
-            console.log("Browser: User accepted receiving notifications, save as subscriber data!");
-            navigator.serviceWorker.ready.then(function (serviceworker) { //When the Service Worker is ready, generate the subscription with our Serice Worker's pushManager and save it to our list
-                const VAPIDPublicKey = "BAZGgCTrFHfX-tjY-0Rko8R0U6V0nYp6mwLr_QCBQCcfI2V8rAAqXYxtNv6CGtQonFYJZt5YTzoARkgvYhS2dBM"; // Fill in your VAPID publicKey here
-                const options = { applicationServerKey: VAPIDPublicKey, userVisibleOnly: true } //Option userVisibleOnly is neccesary for Chrome
-                serviceworker.pushManager.subscribe(options).then((subscription) => {
-                    //POST the generated subscription to our saving script (this needs to happen server-side, (client-side) JavaScript can't write files or databases)
-                    let subscriberFormData = new FormData();
-                    subscriberFormData.append("json", JSON.stringify(subscription));
-                    fetch("data/saveSubscription.php", { method: "POST", body: subscriberFormData });
-                });
-            });
-        }
-    }).catch((error) => {
-        console.log(error);
-    });
-}
-
 var installButton = document.getElementById("installID")
 var installPrompt; //Variable to store the install action in
 window.addEventListener("beforeinstallprompt", (event) => {
@@ -84,3 +60,65 @@ window.addEventListener("beforeinstallprompt", (event) => {
     installButton.style.visibility = "visible"
     console.log(installPrompt)
 });
+
+//Spotify authentication
+var redirect_uri = "http://127.0.0.1:5500/src/index.html"
+var client_id = "";
+var client_secret = "";
+
+const AUTHORIZE = "https://accounts.spotify.com/authorize"
+
+function onPagLoad() {
+    if (window.location.search.length > 0) {
+        handleRedirect();
+    }
+}
+
+function handleRedirect() {
+    let code = getCode();
+    fetchAccessToken(code);
+}
+
+function fetchAccessToken(code) {
+    let body = "grant_type=authorization_code";
+    body += "&code=" + code;
+    body += "&redirect_uri=" + encodeURI(redirect_uri);
+    body += "&client_id=" + client_id;
+    body += "&client_secret=" + client_secret;
+    callAuthorizationApi(body);
+}
+
+function callAuthorizationApi(body) {
+    let xhr = new XMLHttpRequest();
+    xhr.open("POST", TOKEN, true);
+    // !!!!!!!!!!!!!!!!!!!!!
+}
+
+function getCode() {
+    let code = null;
+    const queryString = window.location.search;
+    // Make sure query contains data
+    if (queryString.length > 0) {
+        const urlParams = new URLSearchParams(queryString);
+        // Set and return queried value of code
+        code = urlParams.get('code')
+    }
+    return code;
+}
+
+function requestAuthorization() {
+    client_id = document.getElementById("clientId").value;
+    client_secret = document.getElementById("clientSecret").value;
+    // TO-DO hide client data in env file
+    localStorage.setItem("client_id", client_id);
+    localStorage.setItem("client_secret", client_secret);
+
+    let url = AUTHORIZE;
+    url += "?client_id=" + client_id;
+    url += "&response_type=code";
+    url += "&redirect_uri=" + encodeURI(redirect_uri);
+    url += "&show_dialog=true";
+    url += "&scope=user-read-private user-read-email user-modify-playback-state user-read-playback-position user-library-read streaming user-read-playback-state user-read-recently-played playlist-read-private";
+    // Show Spotify authorization window
+    window.location.href = url;
+}
