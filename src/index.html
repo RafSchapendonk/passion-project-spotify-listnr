@@ -22,7 +22,7 @@
 
 <body onload="onPageLoad()">
     <div id="root"></div>
-    <div class="">
+    <div class="container">
         <div id="tokenSection" class="">
             <div class="">
                 <div class="">
@@ -33,7 +33,18 @@
                     <label for="clientSecret" class="">Client secret</label>
                     <input type="text" class="border-4 border-sky-500" id="clientSecret" placeholder="">
                 </div>
-                <input class="" type="button" onclick="requestAuthorization()" value="Request Authorization">
+                <input class="border-4 border-sky-500" type="button" onclick="requestAuthorization()"
+                    value="Request Authorization">
+            </div>
+        </div>
+    </div>
+    <div id="deviceSection">
+        <div class="">
+            <div class="">
+                <label for="devices" class="">Devices</label>
+                <select id="devices" class="w-96"></select>
+                <input type="button" class="border-4 border-sky-500" onclick="refreshDevices()" value="Refresh Devices">
+
             </div>
         </div>
     </div>
