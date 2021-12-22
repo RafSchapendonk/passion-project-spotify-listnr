@@ -70,10 +70,18 @@ var client_secret = "afe7526d836b40079015b2c7c9673fe7";
 var currentPlaylist = "";
 
 const AUTHORIZE = "https://accounts.spotify.com/authorize"
-const TOKEN = "https://accounts.spotify.com/api/token"
-const DEVICES = "https://api.spotify.com/v1/me/player/devices";
+const TOKEN = "https://accounts.spotify.com/api/token";
 const PLAYLISTS = "https://api.spotify.com/v1/me/playlists";
+const DEVICES = "https://api.spotify.com/v1/me/player/devices";
+const PLAY = "https://api.spotify.com/v1/me/player/play";
+const PAUSE = "https://api.spotify.com/v1/me/player/pause";
+const NEXT = "https://api.spotify.com/v1/me/player/next";
+const PREVIOUS = "https://api.spotify.com/v1/me/player/previous";
+const PLAYER = "https://api.spotify.com/v1/me/player";
 const TRACKS = "https://api.spotify.com/v1/playlists/{{PlaylistId}}/tracks";
+const CURRENTLYPLAYING = "https://api.spotify.com/v1/me/player/currently-playing";
+const SHUFFLE = "https://api.spotify.com/v1/me/player/shuffle";
+const RECOMMEND = "https://api.spotify.com/v1/recommendations?limit=10"
 
 function onPageLoad() {
     // client_id = localStorage.getItem("client_id");
@@ -93,6 +101,7 @@ function onPageLoad() {
             document.getElementById("deviceSection").style.display = 'block';
             refreshDevices();
             refreshPlaylists();
+            currentlyPlaying();
         }
     }
 }
@@ -181,6 +190,10 @@ function refreshPlaylists() {
     callApi("GET", PLAYLISTS, null, handlePlaylistsResponse);
 }
 
+function currentlyPlaying() {
+    callApi("GET", PLAYER + "?market=US", null, handleCurrentlyPlayingResponse);
+}
+
 function handleDevicesResponse() {
     if (this.status == 200) {
         var data = JSON.parse(this.responseText);
@@ -190,6 +203,41 @@ function handleDevicesResponse() {
     }
     else if (this.status == 401) {
         refresAccesstoken()
+    }
+    else {
+        console.log(this.responseText);
+        alert(this.responseText);
+    }
+}
+
+function handleCurrentlyPlayingResponse() {
+    if (this.status == 200) {
+        var data = JSON.parse(this.responseText);
+        console.log(data);
+        if (data.item != null) {
+            document.getElementById("albumImage").src = data.item.album.images[0].url;
+            document.getElementById("trackTitle").innerHTML = data.item.name;
+            document.getElementById("trackArtist").innerHTML = data.item.artists[0].name;
+        }
+
+        if (data.device != null) {
+            //Select device
+            currentDevice = data.device.id;
+            document.getElementById('devices').value = currentDevice;
+        }
+
+        if (data.context != null) {
+            //Select playlist
+            currentPlaylist = data.context.uri;
+            currentPlaylist = currentPlaylist.substring(currentPlaylist.lastIndexOf(":") + 1, currentPlaylist.length);
+            document.getElementById('playlists').value = currentPlaylist;
+        }
+    }
+    else if (this.status == 204) {
+
+    }
+    else if (this.status == 401) {
+        refreshAccessToken()
     }
     else {
         console.log(this.responseText);
@@ -227,6 +275,36 @@ function fetchTracks() {
         url = TRACKS.replace("{{PlaylistId}}", playlist_id);
         callApi("GET", url, null, handleTracksResponse);
     }
+}
+
+function fetchRecommendations() {
+    let genre_recommendations = document.getElementById("genre_recommendations").value
+    if (genre_recommendations.length > 0) {
+        callApi("GET", RECOMMEND + "&seed_genres=" + genre_recommendations, null, handleRecommendationResponse)
+    }
+}
+
+function handleRecommendationResponse() {
+    if (this.status == 200) {
+        var data = JSON.parse(this.responseText);
+        console.log(data);
+        removeAllItems("recommendations");
+        data.tracks.forEach((item, index) => addRecomendation(item, index));
+    }
+    else if (this.status == 401) {
+        refreshAccessToken()
+    }
+    else {
+        console.log(this.responseText);
+        alert(this.responseText);
+    }
+}
+
+function addRecomendation(item, index) {
+    let node = document.createElement("option");
+    node.value = index;
+    node.innerHTML = item.name + " (" + item.artists[0].name + ")";
+    document.getElementById("recommendations").appendChild(node)
 }
 
 function handleTracksResponse() {
@@ -280,5 +358,60 @@ function removeAllItems(elementId) {
     let node = document.getElementById(elementId);
     while (node.firstChild) {
         node.removeChild(node.firstChild);
+    }
+}
+
+function play() {
+    let playlist_id = document.getElementById("playlists").value;
+    let trackindex = document.getElementById("tracks").value;
+    let album = document.getElementById("album").value;
+    let body = {};
+    if (album.length > 0) {
+        body.context_uri = album;
+    }
+    else {
+        body.context_uri = "spotify:playlist:" + playlist_id;
+    }
+    body.offset = {};
+    body.offset.position = trackindex.length > 0 ? Number(trackindex) : 0;
+    body.offset.position_ms = 0;
+    callApi("PUT", PLAY + "?device_id=" + deviceId(), JSON.stringify(body), handleApiResponse);
+}
+
+function previous() {
+    callApi("POST", PREVIOUS + "?device_id=" + deviceId(), null, handleApiResponse);
+}
+
+function deviceId() {
+    return document.getElementById("devices").value;
+}
+
+function shuffle() {
+    callApi("PUT", SHUFFLE + "?state=true&device_id=" + deviceId(), null, handleApiResponse);
+    play();
+}
+
+function pause() {
+    callApi("PUT", PAUSE + "?device_id=" + deviceId(), null, handleApiResponse);
+}
+
+function next() {
+    callApi("POST", NEXT + "?device_id=" + deviceId(), null, handleApiResponse);
+}
+
+function handleApiResponse() {
+    if (this.status == 200) {
+        console.log(this.responseText);
+        setTimeout(currentlyPlaying, 2000);
+    }
+    else if (this.status == 204) {
+        setTimeout(currentlyPlaying, 2000);
+    }
+    else if (this.status == 204) {
+        refreshAccessToken()
+    }
+    else {
+        console.log(this.responseText)
+        alert(this.responseText)
     }
 }

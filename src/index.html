@@ -57,8 +57,29 @@
             <input class="" type="button" onclick="fetchTracks()" value="Fetch Tracks">
         </div>
         <div class="">
-            <label for="tracks" class="">Album</label>
-            <input id="album" class="">
+            <label for="genre_recommendations" class="">Genre recommendations</label>
+            <input id="genre_recommendations" class="border-4 border-sky-500">
+            <input class="" type="" onclick="fetchRecommendations()" value="Fetch Recommendations">
+            <label for="recommendations" class="">Recommendations</label>
+            <select id="recommendations" class="w-96">
+            </select>
+        </div>
+        <div class="flex flex-row justify-around">
+            <input type="button" class="border-4 border-sky-500" onclick="previous()" value="Prev">
+            <input type="button" class="border-4 border-sky-500" onclick="play()" value="Play">
+            <input type="button" class="border-4 border-sky-500" onclick="shuffle()" value="Shuffle">
+            <input type="button" class="border-4 border-sky-500" onclick="pause()" value="Pause">
+            <input type="button" class="border-4 border-sky-500" onclick="next()" value="Next">
+        </div>
+        <div class="border-4 border-sky-500">
+            <h1> Currently Playing</h1>
+            <input type="button" class="" onclick="currentlyPlaying()" value="Refresh Currently Playing">
+            <div>
+                <div id="trackTitle"></div>
+                <div id="trackArtist"></div>
+                <img id="albumImage" src="">
+            </div>
+
         </div>
 </body>
 
