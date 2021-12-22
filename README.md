@@ -4,6 +4,7 @@
 
 ## Links
 - [Hera](https://i447972.hera.fhict.nl)
+- [Spotify API](https://developer.spotify.com/documentation/web-api/)
 
 ## Screenshots
 
