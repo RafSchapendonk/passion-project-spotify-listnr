@@ -1,11 +1,13 @@
-<h1 align="center"><project-name>POC s3</h1>
+<h1 align="center"><project-name>Passion project s3</h1>
 
 <p align="center"><project-description>In this repo i built a spotify app that serves you recommendations in the same way you would use tinder.</p>
 
 ## Links
-- [Hera](https://i447972.hera.fhict.nl "Rohit jain")
+- [Hera](https://i447972.hera.fhict.nl)
 
 ## Screenshots
+
+Not yet available
 
 ## Commands
 
