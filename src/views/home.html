@@ -1,1 +1,44 @@
-<h1>I am a home page<h1>
+<div id="home_container" class="h-screen p-8 bg-gradient-to-b from-blue to-black">
+
+    <div id="recomendation_dropdown">
+        <select class="w-3/4" id="playlists"></select>
+    </div>
+
+    <div id="song_data">
+        <img src="assets/img/album.jpg">
+        <div id="song_text" class="py-12">
+            <h1 class="font-bold text-3xl text-white">Song title</h1>
+            <h2 class="text-2xl text-gray">Artist name</h2>
+        </div>
+    </div>
+
+    <div class="bg-gray rounded overflow-hidden mb-1.5">
+        <div style="width: 50%" class="bg-white p-0.5 rounded-sm"></div>
+    </div>
+
+    <div id="time" class="flex justify-between text-gray">
+        <div id="current_time">0:05</div>
+        <div id="total_time">0:10</div>
+    </div>
+
+    <div id="control_container">
+        <div class="flex justify-evenly items-center">
+            <div class="">
+                <img src="assets/icon/dislike.svg">
+            </div>
+            <div id="play_button" class="grid grid-rows-1 grid-cols-1">
+                <img id="play_button_icon" class="z-10 row-start-1 col-start-1 self-center justify-self-center"
+                    src="assets/icon/play.svg">
+                <img class="z-0 row-start-1 col-start-1" src="assets/icon/elipse.svg">
+            </div>
+            <div class="">
+                <img src="assets/icon/like.svg">
+            </div>
+        </div>
+
+        <div class="flex justify-center py-8">
+            <img src="assets/icon/undo.svg">
+        </div>
+    </div>
+
+</div>
