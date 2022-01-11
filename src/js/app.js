@@ -100,8 +100,9 @@ const NEXT = "https://api.spotify.com/v1/me/player/next";
 const PREVIOUS = "https://api.spotify.com/v1/me/player/previous";
 const PLAYER = "https://api.spotify.com/v1/me/player";
 const TRACKS = "https://api.spotify.com/v1/playlists/{{PlaylistId}}/tracks";
-const TRACKDETAIL = "https://api.spotify.com/v1/tracks/"
-const TRACKFEATURES = "https://api.spotify.com/v1/audio-features/"
+const TRACKDETAIL = "https://api.spotify.com/v1/tracks/";
+const TRACKFEATURES = "https://api.spotify.com/v1/audio-features/";
+const ARTIST = "https://api.spotify.com/v1/artists/";
 const CURRENTLYPLAYING =
     "https://api.spotify.com/v1/me/player/currently-playing";
 const SHUFFLE = "https://api.spotify.com/v1/me/player/shuffle";
@@ -279,10 +280,28 @@ function handleTracksResponse() {
     if (this.status == 200) {
         var data = JSON.parse(this.responseText);
         console.log(data);
-        // Get the details from the track such as genres
-        data.items.forEach((item) => callApi("GET", TRACKDETAIL + item.track.id, null, handleTrackDetailResponse));
+
+        // Reset all data from previous call
+        playlistLength = 0
+        acousticness = 0
+        danceability = 0
+        energy = 0
+        instrumentalness = 0
+        key = 0
+        liveness = 0
+        loudness = 0
+        mode = 0
+        speechiness = 0
+        tempo = 0
+        valence = 0
+
+        playlistLength = data.total
+        // There is no suitable way to get a genre from a specific track
+        // Currently the most accurate way to get genres is by fetching the genres from the artist so this is how I will be determining the suitable genres
+        data.items.forEach((item) => callApi("GET", ARTIST + item.track.artists[0].id, null, handleArtistResponse))
         // Get the features from a track such as danceability
         data.items.forEach((item) => callApi("GET", TRACKFEATURES + item.track.id, null, handleTrackFeaturesResponse));
+        fetchRecommendations()
     } else if (this.status == 401) {
         refreshAccessToken();
     } else {
@@ -308,8 +327,6 @@ function handleTrackFeaturesResponse() {
         var data = JSON.parse(this.responseText);
         console.log(data);
         // Add up all song features so an average can be calculated later on
-        playlistLength++;
-        danceability += data.danceability
         acousticness += data.acousticness
         danceability += data.danceability
         energy += data.energy
@@ -329,3 +346,49 @@ function handleTrackFeaturesResponse() {
     }
 }
 
+function fetchRecommendations() {
+    // Calculate feature averages
+    let avgAcousticness = acousticness / playlistLength
+    let avgDanceability = danceability / playlistLength
+    let avgEnergy = energy / playlistLength
+    let avgInstrumentalness = instrumentalness / playlistLength
+    let avgKey = key / playlistLength
+    let avgLiveness = liveness / playlistLength
+    let avgLoudness = loudness / playlistLength
+    let avgMode = mode / playlistLength
+    let avgSpeechiness = speechiness / playlistLength
+    let avgTempo = tempo / playlistLength
+    let avgValence = valence / playlistLength
+    // TO-DO Add custom genres
+    var queryString = "&seed_genres=country" + "&target_acousticness=" + avgAcousticness + "&target_danceability" + avgDanceability + "&target_energy=" + avgEnergy + "&target_instrumentalness=" + avgInstrumentalness + "&target_key=" + avgKey + "&target_liveness=" + avgKey + "&target_liveness=" + avgLiveness + "&target_loudness=" + avgLoudness + "&target_mode=" + avgMode + "&target_speechiness=" + avgSpeechiness + "&target_tempo=" + avgTempo + "&target_valence=" + avgValence;
+    callApi("GET", RECOMMEND + queryString, null, handleRecommendationResponse)
+}
+
+function handleRecommendationResponse() {
+    if (this.status == 200) {
+        var data = JSON.parse(this.responseText);
+        console.log(data);
+    }
+    else if (this.status == 401) {
+        refreshAccessToken();
+    }
+    else {
+        console.log(this.responseText);
+        alert(this.responseText);
+    }
+}
+
+function handleArtistResponse() {
+    if (this.status == 200) {
+        var data = JSON.parse(this.responseText);
+        playlistGenres = playlistGenres.concat(data.genres);
+        console.log(playlistGenres);
+    }
+    else if (this.status == 401) {
+        refreshAccessToken()
+    }
+    else {
+        console.log(this.responseText);
+        alert(this.responseText);
+    }
+}
