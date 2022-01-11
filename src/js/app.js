@@ -30,10 +30,6 @@ $(document).ready(function () {
     $("#contact-button").click(function () {
         loadPage("./views/contact.html");
     });
-
-    $("#content-button").click(function () {
-        loadPage("./views/test.html");
-    });
 });
 
 //Service worker
@@ -76,7 +72,22 @@ var redirect_uri = "http://127.0.0.1:5502/src/index.html";
 var client_id = "f0f0c66ea501495e8e9755f63932633c";
 var client_secret = "afe7526d836b40079015b2c7c9673fe7";
 
+// Necessary data to determine playlist recommendations
+// No popularity because the goal of the app is to discover something new
 var currentPlaylist = "";
+var playlistGenres = [];
+var playlistLength = 0;
+var danceability = 0;
+var acousticness = 0;
+var energy = 0;
+var instrumentalness = 0;
+var key = 0;
+var liveness = 0;
+var loudness = 0;
+var mode = 0;
+var speechiness = 0;
+var tempo = 0;
+var valence = 0;
 
 // Spotify api calls
 const AUTHORIZE = "https://accounts.spotify.com/authorize";
@@ -89,7 +100,8 @@ const NEXT = "https://api.spotify.com/v1/me/player/next";
 const PREVIOUS = "https://api.spotify.com/v1/me/player/previous";
 const PLAYER = "https://api.spotify.com/v1/me/player";
 const TRACKS = "https://api.spotify.com/v1/playlists/{{PlaylistId}}/tracks";
-const TRACK = "https://api.spotify.com/v1/tracks/"
+const TRACKDETAIL = "https://api.spotify.com/v1/tracks/"
+const TRACKFEATURES = "https://api.spotify.com/v1/audio-features/"
 const CURRENTLYPLAYING =
     "https://api.spotify.com/v1/me/player/currently-playing";
 const SHUFFLE = "https://api.spotify.com/v1/me/player/shuffle";
@@ -101,11 +113,11 @@ function onPageLoad() {
     } else {
         access_token = localStorage.getItem("access_token");
         if (access_token == null) {
-            //Acess token unavailable so present token section
+            //Acess token unavailable so send a new authorization request
             requestAuthorization();
             console.log("Access token unavailable");
         } else {
-            //Access token available present device section
+            //Access token available execute needed code
             console.log("Acess token available");
             refreshPlaylists();
         }
@@ -116,7 +128,7 @@ function onPageLoad() {
 function handleRedirect() {
     let code = getCode();
     fetchAccessToken(code);
-    //Remove parameters from URL
+    // Remove parameters from URL
     window.history.pushState("", "", redirect_uri);
 }
 
@@ -150,20 +162,23 @@ function callAuthorizationApi(body) {
 }
 
 function handleAuthorizationResponse() {
-    //Check for a succesfull response
+    // Check for a succesfull response
     if (this.status == 200) {
         var data = JSON.parse(this.responseText);
         console.log(data);
         var data = JSON.parse(this.responseText);
-        //Make sure correct tokens were recieved
+        // Make sure correct tokens were received
         if (data.access_token != undefined) {
             access_token = data.access_token;
+            // Locally store the needed tokens
             localStorage.setItem("access_token", access_token);
         }
         if (data.refresh_token != undefined) {
             refresh_token = data.refresh_token;
+            // Locally store the needed tokens
             localStorage.setItem("refresh_token", refresh_token);
         }
+        // Rerun onPageLoad so the code will be executed with the correct tokens.
         onPageLoad();
     } else {
         console.log(this.responseText);
@@ -189,6 +204,7 @@ function requestAuthorization() {
     localStorage.setItem("client_id", client_id);
     localStorage.setItem("client_secret", client_secret);
 
+    // Construct authorization URL
     let url = AUTHORIZE;
     url += "?client_id=" + client_id;
     url += "&response_type=code";
@@ -219,7 +235,9 @@ function handlePlaylistsResponse() {
     if (this.status == 200) {
         var data = JSON.parse(this.responseText);
         console.log(data);
+        // Clear all items in the select menu when to avoid adding items that dont exist anymore or items that are already inside the menu
         removeAllItems("playlists");
+        // Add all fetched items to the select menu
         data.items.forEach((item) => addPlaylist(item));
         document.getElementById("playlists").value = currentPlaylist;
     } else if (this.status == 401) {
@@ -238,6 +256,7 @@ function addPlaylist(item) {
     document.getElementById("playlists").appendChild(node);
 }
 
+// General function for removing children
 function removeAllItems(elementId) {
     let node = document.getElementById(elementId);
     while (node.firstChild) {
@@ -250,6 +269,7 @@ function fetchTracks() {
     console.log("fetching tracks")
     let playlist_id = document.getElementById("playlists").value;
     if (playlist_id.length > 0) {
+        // Insert playlist ID inside of the fetch request
         url = TRACKS.replace("{{PlaylistId}}", playlist_id);
         callApi("GET", url, null, handleTracksResponse);
     }
@@ -259,7 +279,10 @@ function handleTracksResponse() {
     if (this.status == 200) {
         var data = JSON.parse(this.responseText);
         console.log(data);
-        data.items.forEach((item) => callApi("GET", TRACK + item.track.id, null, handleTrackDataResponse));
+        // Get the details from the track such as genres
+        data.items.forEach((item) => callApi("GET", TRACKDETAIL + item.track.id, null, handleTrackDetailResponse));
+        // Get the features from a track such as danceability
+        data.items.forEach((item) => callApi("GET", TRACKFEATURES + item.track.id, null, handleTrackFeaturesResponse));
     } else if (this.status == 401) {
         refreshAccessToken();
     } else {
@@ -268,7 +291,8 @@ function handleTracksResponse() {
     }
 }
 
-function handleTrackDataResponse() {
+function handleTrackDetailResponse() {
+    // TO-DO fetch song genre
     if (this.status == 200) {
         var data = JSON.parse(this.responseText);
         console.log(data);
@@ -276,6 +300,32 @@ function handleTrackDataResponse() {
         refreshAccessToken();
     } else {
         console.log(this.responseText);
+    }
+}
+
+function handleTrackFeaturesResponse() {
+    if (this.status == 200) {
+        var data = JSON.parse(this.responseText);
+        console.log(data);
+        // Add up all song features so an average can be calculated later on
+        playlistLength++;
+        danceability += data.danceability
+        acousticness += data.acousticness
+        danceability += data.danceability
+        energy += data.energy
+        instrumentalness += data.instrumentalness
+        key += data.key
+        liveness += data.liveness
+        loudness += data.loudness
+        mode += data.mode
+        speechiness += data.speechiness
+        tempo += data.tempo
+        valence += data.valence
+    } else if (this.status == 401) {
+        refreshAccessToken();
+    } else {
+        console.log(this.responseText);
         // alert(this.responseText);
     }
 }
+
