@@ -67,7 +67,7 @@ window.addEventListener("beforeinstallprompt", (event) => {
 });
 
 //Spotify authentication
-var redirect_uri = "http://127.0.0.1:5502/src/index.html";
+var redirect_uri = "http://127.0.0.1:5501/src/index.html";
 // TO-DO Hide client dat in env file
 var client_id = "f0f0c66ea501495e8e9755f63932633c";
 var client_secret = "afe7526d836b40079015b2c7c9673fe7";
@@ -75,7 +75,10 @@ var client_secret = "afe7526d836b40079015b2c7c9673fe7";
 // Necessary data to determine playlist recommendations
 // No popularity because the goal of the app is to discover something new
 var currentPlaylist = "";
+// Array where all the fetched genres get put into
 var playlistGenres = [];
+// Array where playlistgenres get counted
+var frequenceItems = [];
 var playlistLength = 0;
 var danceability = 0;
 var acousticness = 0;
@@ -88,6 +91,8 @@ var mode = 0;
 var speechiness = 0;
 var tempo = 0;
 var valence = 0;
+
+var trackFeatureCalls = 0;
 
 // Spotify api calls
 const AUTHORIZE = "https://accounts.spotify.com/authorize";
@@ -235,7 +240,6 @@ function refreshPlaylists() {
 function handlePlaylistsResponse() {
     if (this.status == 200) {
         var data = JSON.parse(this.responseText);
-        console.log(data);
         // Clear all items in the select menu when to avoid adding items that dont exist anymore or items that are already inside the menu
         removeAllItems("playlists");
         // Add all fetched items to the select menu
@@ -294,14 +298,18 @@ function handleTracksResponse() {
         speechiness = 0
         tempo = 0
         valence = 0
-
+        trackFeatureCalls = 0
+        playlistGenres = []
         playlistLength = data.total
+
         // There is no suitable way to get a genre from a specific track
         // Currently the most accurate way to get genres is by fetching the genres from the artist so this is how I will be determining the suitable genres
-        data.items.forEach((item) => callApi("GET", ARTIST + item.track.artists[0].id, null, handleArtistResponse))
-        // Get the features from a track such as danceability
-        data.items.forEach((item) => callApi("GET", TRACKFEATURES + item.track.id, null, handleTrackFeaturesResponse));
-        fetchRecommendations()
+        data.items.forEach((item) => {
+            // Get the features from a track such as danceability
+            callApi("GET", ARTIST + item.track.artists[0].id, null, handleArtistResponse)
+            callApi("GET", TRACKFEATURES + item.track.id, null, handleTrackFeaturesResponse)
+        });
+
     } else if (this.status == 401) {
         refreshAccessToken();
     } else {
@@ -325,7 +333,6 @@ function handleTrackDetailResponse() {
 function handleTrackFeaturesResponse() {
     if (this.status == 200) {
         var data = JSON.parse(this.responseText);
-        console.log(data);
         // Add up all song features so an average can be calculated later on
         acousticness += data.acousticness
         danceability += data.danceability
@@ -338,6 +345,14 @@ function handleTrackFeaturesResponse() {
         speechiness += data.speechiness
         tempo += data.tempo
         valence += data.valence
+
+        trackFeatureCalls++
+
+        console.log(playlistLength + "+" + trackFeatureCalls)
+        if (trackFeatureCalls === playlistLength) {
+            mostFrequentArrayItems(playlistGenres)
+            fetchRecommendations()
+        }
     } else if (this.status == 401) {
         refreshAccessToken();
     } else {
@@ -359,8 +374,30 @@ function fetchRecommendations() {
     let avgSpeechiness = speechiness / playlistLength
     let avgTempo = tempo / playlistLength
     let avgValence = valence / playlistLength
+
+    let topGenre1 = frequenceItems[0]
+    let topGenre2 = frequenceItems[1]
+    let topGenre3 = frequenceItems[2]
+    let topGenre4 = frequenceItems[3]
+    let topGenre5 = frequenceItems[4]
+
+    let topGenres = topGenre1[0] + "," + topGenre2[0] + "," + topGenre3[0] + "," + topGenre4[0] + "," + topGenre5[0]
     // TO-DO Add custom genres
-    var queryString = "&seed_genres=country" + "&target_acousticness=" + avgAcousticness + "&target_danceability" + avgDanceability + "&target_energy=" + avgEnergy + "&target_instrumentalness=" + avgInstrumentalness + "&target_key=" + avgKey + "&target_liveness=" + avgKey + "&target_liveness=" + avgLiveness + "&target_loudness=" + avgLoudness + "&target_mode=" + avgMode + "&target_speechiness=" + avgSpeechiness + "&target_tempo=" + avgTempo + "&target_valence=" + avgValence;
+    var queryString =
+        "&seed_genres=" + topGenres
+        + "&target_acousticness=" + avgAcousticness
+        + "&target_danceability" + avgDanceability
+        + "&target_energy=" + avgEnergy
+        + "&target_instrumentalness=" + avgInstrumentalness
+        + "&target_liveness=" + avgLiveness
+        + "&target_loudness=" + avgLoudness
+        + "&target_speechiness=" + avgSpeechiness
+        + "&target_tempo=" + avgTempo
+        + "&target_valence=" + avgValence
+        // The spotify api only accepts the following parameters as integers
+        + "&target_key=" + Math.round(avgKey)
+        + "&target_mode=" + Math.round(avgMode);
+    console.log(RECOMMEND + queryString)
     callApi("GET", RECOMMEND + queryString, null, handleRecommendationResponse)
 }
 
@@ -382,7 +419,7 @@ function handleArtistResponse() {
     if (this.status == 200) {
         var data = JSON.parse(this.responseText);
         playlistGenres = playlistGenres.concat(data.genres);
-        console.log(playlistGenres);
+        console.log(playlistGenres)
     }
     else if (this.status == 401) {
         refreshAccessToken()
@@ -391,4 +428,42 @@ function handleArtistResponse() {
         console.log(this.responseText);
         alert(this.responseText);
     }
+}
+
+function mostFrequentArrayItems(arr) {
+    // New array with item count
+    frequenceItems = [];
+
+    // Cycless through data
+    for (let item of arr) {
+        // Checks if the item already exist in the array and up the count if so. Otherwise add it to the array
+        let addOrNot = searchForItem(item, frequenceItems);
+        // If the item does not yet exist true is returned and the following code will run to add the new object with a count of 1.
+        if (addOrNot) {
+            let itemToPush = [item, 1];
+            frequenceItems.push(itemToPush);
+        }
+    }
+
+    // Sort based on second array item
+    frequenceItems.sort(function (a, b) {
+        return a[1] - b[1];
+    });
+    frequenceItems.reverse();
+}
+
+function searchForItem(item, frequenceItems) {
+    let addOrNot = true;
+    // Look through items from the new array to check if the item already exists. If it doesnt exist return true
+    for (let fitem of frequenceItems) {
+        if (item == fitem[0]) {
+            fitem[1]++;
+            addOrNot = false;
+            return addOrNot;
+        }
+        else {
+            addOrNot = true;
+        }
+    }
+    return addOrNot;
 }
