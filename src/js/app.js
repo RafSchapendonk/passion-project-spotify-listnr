@@ -72,6 +72,7 @@ var redirect_uri = "http://127.0.0.1:5501/src/index.html";
 var client_id = "f0f0c66ea501495e8e9755f63932633c";
 var client_secret = "afe7526d836b40079015b2c7c9673fe7";
 
+var userSpotifyId = ""
 // Necessary data to determine playlist recommendations
 // No popularity because the goal of the app is to discover something new
 var currentPlaylist = "";
@@ -248,6 +249,7 @@ function getUserId() {
 function handleGetUserId() {
     if (this.status == 200) {
         var data = JSON.parse(this.responseText);
+        userSpotifyId = data.id
         console.log(data)
     } else if (this.status == 401) {
         refreshAccessToken();
@@ -579,5 +581,16 @@ function dislike() {
 }
 
 async function addToRecommendations() {
-    await setDoc(doc(db, "users",))
+    db.collection("users").doc(userSpotifyId).set({
+        test: [
+            "test",
+            "test"
+        ]
+    })
+        .then(() => {
+            console.log("Document successfully written!");
+        })
+        .catch((error) => {
+            console.error("Error writing document: ", error);
+        });
 }
