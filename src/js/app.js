@@ -99,6 +99,7 @@ var currentRecommendations = []
 // Spotify api calls
 const AUTHORIZE = "https://accounts.spotify.com/authorize";
 const TOKEN = "https://accounts.spotify.com/api/token";
+const USER = "https://api.spotify.com/v1/me";
 const PLAYLISTS = "https://api.spotify.com/v1/me/playlists";
 const DEVICES = "https://api.spotify.com/v1/me/player/devices";
 const PLAY = "https://api.spotify.com/v1/me/player/play";
@@ -127,6 +128,7 @@ function onPageLoad() {
         } else {
             //Access token available execute needed code
             console.log("Acess token available");
+            getUserId()
             refreshPlaylists();
         }
     }
@@ -237,6 +239,22 @@ function callApi(method, url, body, callback) {
 // Fetching user's playlists
 function refreshPlaylists() {
     callApi("GET", PLAYLISTS, null, handlePlaylistsResponse);
+}
+
+function getUserId() {
+    callApi("GET", USER, null, handleGetUserId);
+}
+
+function handleGetUserId() {
+    if (this.status == 200) {
+        var data = JSON.parse(this.responseText);
+        console.log(data)
+    } else if (this.status == 401) {
+        refreshAccessToken();
+    } else {
+        console.log(this.responseText);
+        alert(this.responseText);
+    }
 }
 
 function handlePlaylistsResponse() {
@@ -518,10 +536,10 @@ function handleApiResponse() {
     console.log("Handling API resonse")
     if (this.status == 200) {
         console.log(this.responseText);
-        setTimeout(currentlyPlaying, 2000);
+        setTimeout(currentlyPlaying, 1000);
     }
     else if (this.status == 204) {
-        setTimeout(currentlyPlaying, 2000);
+        setTimeout(currentlyPlaying, 1000);
     }
     else {
         console.log(this.responseText)
@@ -550,6 +568,7 @@ function handleCurrentlyPlayingResponse() {
 }
 
 function like() {
+    addToRecommendations()
     recommendationIndex++;
     play(currentRecommendations);
 }
@@ -557,4 +576,8 @@ function like() {
 function dislike() {
     recommendationIndex++;
     play(currentRecommendations);
+}
+
+async function addToRecommendations() {
+    await setDoc(doc(db, "users",))
 }
