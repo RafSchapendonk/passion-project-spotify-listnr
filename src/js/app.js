@@ -93,6 +93,8 @@ var tempo = 0;
 var valence = 0;
 
 var trackFeatureCalls = 0;
+var recommendationIndex = 0;
+var currentRecommendations = []
 
 // Spotify api calls
 const AUTHORIZE = "https://accounts.spotify.com/authorize";
@@ -111,7 +113,7 @@ const ARTIST = "https://api.spotify.com/v1/artists/";
 const CURRENTLYPLAYING =
     "https://api.spotify.com/v1/me/player/currently-playing";
 const SHUFFLE = "https://api.spotify.com/v1/me/player/shuffle";
-const RECOMMEND = "https://api.spotify.com/v1/recommendations?limit=10";
+const RECOMMEND = "https://api.spotify.com/v1/recommendations?";
 
 function onPageLoad() {
     if (window.location.search.length > 0) {
@@ -253,6 +255,7 @@ function handlePlaylistsResponse() {
     }
 }
 
+// Add a playlist to the dropdown menu
 function addPlaylist(item) {
     let node = document.createElement("option");
     node.value = item.id;
@@ -319,7 +322,6 @@ function handleTracksResponse() {
 }
 
 function handleTrackDetailResponse() {
-    // TO-DO fetch song genre
     if (this.status == 200) {
         var data = JSON.parse(this.responseText);
         console.log(data);
@@ -361,6 +363,9 @@ function handleTrackFeaturesResponse() {
 }
 
 function fetchRecommendations() {
+    // Reset recommendationIndex
+    recommendationIndex = 0;
+
     // Calculate feature averages
     let avgAcousticness = acousticness / playlistLength
     let avgDanceability = danceability / playlistLength
@@ -399,6 +404,8 @@ function fetchRecommendations() {
         topGenres = topGenre1[0]
     }
 
+    console.log(topGenres)
+
     // Add all parameters together for the API call
     var queryString =
         "&seed_genres=" + topGenres
@@ -423,10 +430,10 @@ function handleRecommendationResponse() {
         var data = JSON.parse(this.responseText);
         console.log(data);
         if (data.tracks.length < 10) {
-            setTimeout(1500)
-            fetchRecommendations()
+            alert("Sorry we couldnt find any recommendations for you. Looks like you already have the perfect playlist.")
         }
         else {
+            currentRecommendations = data
             play(data)
         }
     }
@@ -494,7 +501,7 @@ function searchForItem(item, frequenceItems) {
 function play(data) {
     console.log(data)
     let body = {};
-    body.context_uri = data.tracks[0].album.uri;
+    body.context_uri = data.tracks[recommendationIndex].album.uri;
     body.offset = {};
     body.offset.position = 0
     body.offset.position_ms = 0;
@@ -504,7 +511,7 @@ function play(data) {
 
 function currentlyPlaying() {
     console.log("Calling currently playing")
-    callApi("GET", PLAYER + "?market=US", null, handleCurrentlyPlayingResponse);
+    callApi("GET", PLAYER, null, handleCurrentlyPlayingResponse);
 }
 
 function handleApiResponse() {
@@ -515,9 +522,6 @@ function handleApiResponse() {
     }
     else if (this.status == 204) {
         setTimeout(currentlyPlaying, 2000);
-    }
-    else if (this.status == 204) {
-        refreshAccessToken()
     }
     else {
         console.log(this.responseText)
@@ -531,26 +535,10 @@ function handleCurrentlyPlayingResponse() {
         var data = JSON.parse(this.responseText);
         console.log(data);
         if (data.item != null) {
-            // document.getElementById("albumImage").src = data.item.album.images[0].url;
-            // document.getElementById("trackTitle").innerHTML = data.item.name;
-            // document.getElementById("trackArtist").innerHTML = data.item.artists[0].name;
+            document.getElementById("albumImage").src = data.item.album.images[0].url;
+            document.getElementById("trackTitle").innerHTML = data.item.name;
+            document.getElementById("trackArtist").innerHTML = data.item.artists[0].name;
         }
-
-        if (data.device != null) {
-            //Select device
-            currentDevice = data.device.id;
-            // document.getElementById('devices').value = currentDevice;
-        }
-
-        if (data.context != null) {
-            //Select playlist
-            currentPlaylist = data.context.uri;
-            currentPlaylist = currentPlaylist.substring(currentPlaylist.lastIndexOf(":") + 1, currentPlaylist.length);
-            // document.getElementById('playlists').value = currentPlaylist;
-        }
-    }
-    else if (this.status == 204) {
-
     }
     else if (this.status == 401) {
         refreshAccessToken()
@@ -559,4 +547,14 @@ function handleCurrentlyPlayingResponse() {
         console.log(this.responseText);
         alert(this.responseText);
     }
+}
+
+function like() {
+    recommendationIndex++;
+    play(currentRecommendations);
+}
+
+function dislike() {
+    recommendationIndex++;
+    play(currentRecommendations);
 }
