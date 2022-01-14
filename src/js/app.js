@@ -348,7 +348,6 @@ function handleTrackFeaturesResponse() {
 
         trackFeatureCalls++
 
-        console.log(playlistLength + "+" + trackFeatureCalls)
         if (trackFeatureCalls === playlistLength) {
             mostFrequentArrayItems(playlistGenres)
             fetchRecommendations()
@@ -375,14 +374,32 @@ function fetchRecommendations() {
     let avgTempo = tempo / playlistLength
     let avgValence = valence / playlistLength
 
+    // Create variables with the playlists top 5 most frequent genre's 
     let topGenre1 = frequenceItems[0]
     let topGenre2 = frequenceItems[1]
     let topGenre3 = frequenceItems[2]
     let topGenre4 = frequenceItems[3]
     let topGenre5 = frequenceItems[4]
+    let topGenres = ""
 
-    let topGenres = topGenre1[0] + "," + topGenre2[0] + "," + topGenre3[0] + "," + topGenre4[0] + "," + topGenre5[0]
-    // TO-DO Add custom genres
+    // Check if all genres have a value
+    if (topGenre2 != undefined && topGenre3 != undefined && topGenre4 != undefined && topGenre5 != undefined) {
+        topGenres = topGenre1[0] + "," + topGenre2[0] + "," + topGenre3[0] + "," + topGenre4[0] + "," + topGenre5[0]
+    }
+    else if (topGenre3 != undefined && topGenre4 != undefined && topGenre5 != undefined) {
+        topGenres = topGenre1[0] + "," + topGenre2[0] + "," + topGenre3[0] + "," + topGenre4[0]
+    }
+    else if (topGenre4 != undefined && topGenre5 != undefined) {
+        topGenres = topGenre1[0] + "," + topGenre2[0] + "," + topGenre3[0]
+    }
+    else if (topGenre5 != undefined) {
+        topGenres = topGenre1[0] + "," + topGenre2[0]
+    }
+    else {
+        topGenres = topGenre1[0]
+    }
+
+    // Add all parameters together for the API call
     var queryString =
         "&seed_genres=" + topGenres
         + "&target_acousticness=" + avgAcousticness
@@ -405,6 +422,13 @@ function handleRecommendationResponse() {
     if (this.status == 200) {
         var data = JSON.parse(this.responseText);
         console.log(data);
+        if (data.tracks.length < 10) {
+            setTimeout(1500)
+            fetchRecommendations()
+        }
+        else {
+            play(data)
+        }
     }
     else if (this.status == 401) {
         refreshAccessToken();
@@ -419,7 +443,6 @@ function handleArtistResponse() {
     if (this.status == 200) {
         var data = JSON.parse(this.responseText);
         playlistGenres = playlistGenres.concat(data.genres);
-        console.log(playlistGenres)
     }
     else if (this.status == 401) {
         refreshAccessToken()
@@ -466,4 +489,74 @@ function searchForItem(item, frequenceItems) {
         }
     }
     return addOrNot;
+}
+
+function play(data) {
+    console.log(data)
+    let body = {};
+    body.context_uri = data.tracks[0].album.uri;
+    body.offset = {};
+    body.offset.position = 0
+    body.offset.position_ms = 0;
+    console.log("Call play")
+    callApi("PUT", PLAY, JSON.stringify(body), handleApiResponse);
+}
+
+function currentlyPlaying() {
+    console.log("Calling currently playing")
+    callApi("GET", PLAYER + "?market=US", null, handleCurrentlyPlayingResponse);
+}
+
+function handleApiResponse() {
+    console.log("Handling API resonse")
+    if (this.status == 200) {
+        console.log(this.responseText);
+        setTimeout(currentlyPlaying, 2000);
+    }
+    else if (this.status == 204) {
+        setTimeout(currentlyPlaying, 2000);
+    }
+    else if (this.status == 204) {
+        refreshAccessToken()
+    }
+    else {
+        console.log(this.responseText)
+        alert(this.responseText)
+    }
+}
+
+function handleCurrentlyPlayingResponse() {
+    console.log("Handling currently playing")
+    if (this.status == 200) {
+        var data = JSON.parse(this.responseText);
+        console.log(data);
+        if (data.item != null) {
+            // document.getElementById("albumImage").src = data.item.album.images[0].url;
+            // document.getElementById("trackTitle").innerHTML = data.item.name;
+            // document.getElementById("trackArtist").innerHTML = data.item.artists[0].name;
+        }
+
+        if (data.device != null) {
+            //Select device
+            currentDevice = data.device.id;
+            // document.getElementById('devices').value = currentDevice;
+        }
+
+        if (data.context != null) {
+            //Select playlist
+            currentPlaylist = data.context.uri;
+            currentPlaylist = currentPlaylist.substring(currentPlaylist.lastIndexOf(":") + 1, currentPlaylist.length);
+            // document.getElementById('playlists').value = currentPlaylist;
+        }
+    }
+    else if (this.status == 204) {
+
+    }
+    else if (this.status == 401) {
+        refreshAccessToken()
+    }
+    else {
+        console.log(this.responseText);
+        alert(this.responseText);
+    }
 }
