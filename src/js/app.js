@@ -281,7 +281,7 @@ function addPlaylist(item) {
     let node = document.createElement("option");
     node.value = item.id;
     node.onclick = function () { fetchTracks(); };
-    node.innerHTML = item.name + " (" + item.tracks.total + ")";
+    node.innerHTML = item.name;
     document.getElementById("playlists").appendChild(node);
 }
 
@@ -589,60 +589,59 @@ function dislike() {
 // Function that adds the liked song to a firesstore document so it can be added in a playlist later.
 function addToRecommendations() {
     // Creating a name for the playlist.
-    let playlistName = document.getElementById("recomendation_dropdown").value;
+    let e = document.getElementById("playlists");
+    let playlistName = e.options[e.selectedIndex].text;
     let dateObj = new Date();
     let date = dateObj.getUTCDate() + "-" + dateObj.getUTCMonth() + 1;
     let recommendationName = "Listnr " + date + " " + playlistName;
-
-    // Reference to the firestore collection
-    let docRef = db.collection("users").doc(userSpotifyId)
+    let docName = recommendationName + "-" + userSpotifyId;
 
     // Check if the playlist already exists. If that is the case the song will be added to the array.
     // If it isn't a new playlist item will be created.
-    docRef
+    docRef = db.collection("users").doc(docName)
         .get()
-        .then(
-            (querySnapshot) => {
-                console.log(querySnapshot.data())
-                if (querySnapshot.exists) {
-                    docRef.update({
-                        [recommendationName]: {
-                            recommendation_name: recommendationName,
-                            songs: firebase.firestore.FieldValue.arrayUnion(currentSongUri)
-                        }
-                    })
-                        .then(() => {
-                            console.log("Document successfully updated!");
-                        })
-                        .catch((error) => {
-                            console.error("Error writing document: ", error);
-                        });
-                }
-                else {
-                    db.collection("users").doc(userSpotifyId).set({
-                        [recommendationName]: {
-                            recommendation_name: recommendationName,
-                            songs: [currentSongUri]
-                        }
-                    })
-                        .then(() => {
-                            console.log("Document successfully written!");
-                        })
-                        .catch((error) => {
-                            console.error("Error writing document: ", error);
-                        });
-                }
-            })
-
+        .then((doc) => {
+            if (doc.exists) {
+                console.log("Document data:", doc.data());
+                db.collection("users").doc(recommendationName).update({
+                    songs: firebase.firestore.FieldValue.arrayUnion(currentSongUri)
+                })
+            } else {
+                // doc.data() will be undefined in this case
+                console.log("No such document!");
+                db.collection("users").doc(docName).set({
+                    name: recommendationName,
+                    user_id: userSpotifyId,
+                    songs: [currentSongUri]
+                })
+            }
+        }).catch((error) => {
+            console.log("Error getting document:", error);
+        });
 }
 
 async function onLibraryLoad() {
-    db.collection("users").doc(userSpotifyId)
+    db.collection("users").where("user_id", "==", userSpotifyId)
         .get()
-        .then(querySnapshot => {
-            let data = querySnapshot.data();
-            for (let key in data) {
-                console.log(data[key])
-            }
+        .then((querySnapshot) => {
+            querySnapshot.forEach((doc) => {
+                addToRecommendations(doc);
+            });
+        })
+        .catch((error) => {
+            console.log("Error getting documents: ", error);
         });
+}
+
+function addToRecommendations(doc) {
+    let node = document.createElement("div");
+    console.log(doc.data())
+    node.value = doc.data().name;
+    node.onclick = function () { addToSpotify(); };
+    node.innerHTML = doc.data().name;
+    document.getElementById("recommendation_playlists").appendChild(node);
+}
+
+function addToSpotify() {
+    console.log("TO-DO Push playlist to spotify")
 }
