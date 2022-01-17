@@ -76,6 +76,7 @@ var userSpotifyId = ""
 // Necessary data to determine playlist recommendations
 // No popularity because the goal of the app is to discover something new
 var currentPlaylist = "";
+var currentSongUri = "";
 // Array where all the fetched genres get put into
 var playlistGenres = [];
 // Array where playlistgenres get counted
@@ -518,6 +519,8 @@ function searchForItem(item, frequenceItems) {
     return addOrNot;
 }
 
+
+// Function which plays the currently selected song
 function play(data) {
     console.log(data)
     let body = {};
@@ -529,6 +532,7 @@ function play(data) {
     callApi("PUT", PLAY, JSON.stringify(body), handleApiResponse);
 }
 
+// Function that checks what song is currently playing according to Spotify
 function currentlyPlaying() {
     console.log("Calling currently playing")
     callApi("GET", PLAYER, null, handleCurrentlyPlayingResponse);
@@ -555,9 +559,11 @@ function handleCurrentlyPlayingResponse() {
         var data = JSON.parse(this.responseText);
         console.log(data);
         if (data.item != null) {
+            // Update data for the current song
             document.getElementById("albumImage").src = data.item.album.images[0].url;
             document.getElementById("trackTitle").innerHTML = data.item.name;
             document.getElementById("trackArtist").innerHTML = data.item.artists[0].name;
+            currentSongUri = data.item.uri
         }
     }
     else if (this.status == 401) {
@@ -580,17 +586,63 @@ function dislike() {
     play(currentRecommendations);
 }
 
-async function addToRecommendations() {
-    db.collection("users").doc(userSpotifyId).set({
-        test: [
-            "test",
-            "test"
-        ]
-    })
-        .then(() => {
-            console.log("Document successfully written!");
-        })
-        .catch((error) => {
-            console.error("Error writing document: ", error);
+// Function that adds the liked song to a firesstore document so it can be added in a playlist later.
+function addToRecommendations() {
+    // Creating a name for the playlist.
+    let playlistName = document.getElementById("recomendation_dropdown").value;
+    let dateObj = new Date();
+    let date = dateObj.getUTCDate() + "-" + dateObj.getUTCMonth() + 1;
+    let recommendationName = "Listnr " + date + " " + playlistName;
+
+    // Reference to the firestore collection
+    let docRef = db.collection("users").doc(userSpotifyId)
+
+    // Check if the playlist already exists. If that is the case the song will be added to the array.
+    // If it isn't a new playlist item will be created.
+    docRef
+        .get()
+        .then(
+            (querySnapshot) => {
+                console.log(querySnapshot.data())
+                if (querySnapshot.exists) {
+                    docRef.update({
+                        [recommendationName]: {
+                            recommendation_name: recommendationName,
+                            songs: firebase.firestore.FieldValue.arrayUnion(currentSongUri)
+                        }
+                    })
+                        .then(() => {
+                            console.log("Document successfully updated!");
+                        })
+                        .catch((error) => {
+                            console.error("Error writing document: ", error);
+                        });
+                }
+                else {
+                    db.collection("users").doc(userSpotifyId).set({
+                        [recommendationName]: {
+                            recommendation_name: recommendationName,
+                            songs: [currentSongUri]
+                        }
+                    })
+                        .then(() => {
+                            console.log("Document successfully written!");
+                        })
+                        .catch((error) => {
+                            console.error("Error writing document: ", error);
+                        });
+                }
+            })
+
+}
+
+async function onLibraryLoad() {
+    db.collection("users").doc(userSpotifyId)
+        .get()
+        .then(querySnapshot => {
+            let data = querySnapshot.data();
+            for (let key in data) {
+                console.log(data[key])
+            }
         });
 }
