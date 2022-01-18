@@ -67,6 +67,7 @@ window.addEventListener("beforeinstallprompt", (event) => {
 });
 
 //Spotify authentication
+// var redirect_uri = "https://i447972.hera.fhict.nl";
 var redirect_uri = "http://127.0.0.1:5501/src/index.html";
 // TO-DO Hide client dat in env file
 var client_id = "f0f0c66ea501495e8e9755f63932633c";
@@ -284,6 +285,7 @@ function addPlaylist(item) {
     let node = document.createElement("option");
     node.value = item.id;
     node.onclick = function () { fetchTracks(); };
+    node.className = "w-3/4"
     node.innerHTML = item.name;
     document.getElementById("playlists").appendChild(node);
 }
