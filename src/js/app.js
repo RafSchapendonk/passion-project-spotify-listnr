@@ -73,14 +73,16 @@ var client_id = "f0f0c66ea501495e8e9755f63932633c";
 var client_secret = "afe7526d836b40079015b2c7c9673fe7";
 
 var userSpotifyId = ""
-// Necessary data to determine playlist recommendations
-// No popularity because the goal of the app is to discover something new
+
 var currentPlaylist = "";
 var currentSongUri = "";
+var playlistBeingAdded = "";
 // Array where all the fetched genres get put into
 var playlistGenres = [];
 // Array where playlistgenres get counted
 var frequenceItems = [];
+// Necessary data to determine playlist recommendations
+// No popularity because the goal of the app is to discover something new
 var playlistLength = 0;
 var danceability = 0;
 var acousticness = 0;
@@ -94,6 +96,7 @@ var speechiness = 0;
 var tempo = 0;
 var valence = 0;
 
+// Counter for the amount of calls are made to make sure all calls have been made before certain code gets executed.
 var trackFeatureCalls = 0;
 var recommendationIndex = 0;
 var currentRecommendations = []
@@ -103,6 +106,7 @@ const AUTHORIZE = "https://accounts.spotify.com/authorize";
 const TOKEN = "https://accounts.spotify.com/api/token";
 const USER = "https://api.spotify.com/v1/me";
 const PLAYLISTS = "https://api.spotify.com/v1/me/playlists";
+const CREATEPLAYLIST = "https://api.spotify.com/v1/users/{{user_id}}/playlists";
 const DEVICES = "https://api.spotify.com/v1/me/player/devices";
 const PLAY = "https://api.spotify.com/v1/me/player/play";
 const PAUSE = "https://api.spotify.com/v1/me/player/pause";
@@ -178,7 +182,6 @@ function handleAuthorizationResponse() {
     if (this.status == 200) {
         var data = JSON.parse(this.responseText);
         console.log(data);
-        var data = JSON.parse(this.responseText);
         // Make sure correct tokens were received
         if (data.access_token != undefined) {
             access_token = data.access_token;
@@ -223,7 +226,7 @@ function requestAuthorization() {
     url += "&redirect_uri=" + encodeURI(redirect_uri);
     url += "&show_dialog=true";
     url +=
-        "&scope=user-read-private user-read-email user-modify-playback-state user-read-playback-position user-library-read streaming user-read-playback-state user-read-recently-played playlist-read-private";
+        "&scope=user-read-private user-read-email user-modify-playback-state user-read-playback-position user-library-read streaming user-read-playback-state user-read-recently-played playlist-read-private playlist-modify-public playlist-modify-private";
     // Show Spotify authorization window
     window.location.href = url;
 }
@@ -542,10 +545,10 @@ function handleApiResponse() {
     console.log("Handling API resonse")
     if (this.status == 200) {
         console.log(this.responseText);
-        setTimeout(currentlyPlaying, 1000);
+        setTimeout(currentlyPlaying, 500);
     }
     else if (this.status == 204) {
-        setTimeout(currentlyPlaying, 1000);
+        setTimeout(currentlyPlaying, 500);
     }
     else {
         console.log(this.responseText)
@@ -603,13 +606,14 @@ function addToRecommendations() {
         .then((doc) => {
             if (doc.exists) {
                 console.log("Document data:", doc.data());
-                db.collection("users").doc(recommendationName).update({
+                db.collection("users").doc(docName).update({
                     songs: firebase.firestore.FieldValue.arrayUnion(currentSongUri)
                 })
             } else {
                 // doc.data() will be undefined in this case
                 console.log("No such document!");
                 db.collection("users").doc(docName).set({
+                    doc_name: docName,
                     name: recommendationName,
                     user_id: userSpotifyId,
                     songs: [currentSongUri]
@@ -620,12 +624,13 @@ function addToRecommendations() {
         });
 }
 
+// When the library page gets opened the following code needs to run for the correct playlists to be displayed.
 async function onLibraryLoad() {
     db.collection("users").where("user_id", "==", userSpotifyId)
         .get()
         .then((querySnapshot) => {
             querySnapshot.forEach((doc) => {
-                addToRecommendations(doc);
+                addToRecommendationsLibrary(doc);
             });
         })
         .catch((error) => {
@@ -633,15 +638,86 @@ async function onLibraryLoad() {
         });
 }
 
-function addToRecommendations(doc) {
+// The playlists get injected into the HTML
+function addToRecommendationsLibrary(doc) {
     let node = document.createElement("div");
-    console.log(doc.data())
-    node.value = doc.data().name;
-    node.onclick = function () { addToSpotify(); };
+    node.value = doc.data().doc_name;
+    node.onclick = function () { addToSpotify(this.value); };
+    node.className = "mb-4"
     node.innerHTML = doc.data().name;
     document.getElementById("recommendation_playlists").appendChild(node);
 }
 
-function addToSpotify() {
-    console.log("TO-DO Push playlist to spotify")
+// The following code adds a new playlist to spotify based on the data that was saved in the firestore.
+function addToSpotify(value) {
+    console.log(value)
+    playlistBeingAdded = value
+    db.collection("users")
+        .doc(value)
+        .get()
+        .then((doc) => {
+            let body = {};
+            body.name = doc.data().name
+            body.description = "Recommendations discovered with Listnr"
+            body.public = false
+            console.log(body)
+            url = CREATEPLAYLIST.replace("{{user_id}}", userSpotifyId);
+            callApi("POST", url, JSON.stringify(body), handlePlaylistCreation);
+        })
+}
+
+// After the playlist is created all songs will be added in the following function
+function handlePlaylistCreation() {
+    console.log("Handling playlist creation response")
+    if (this.status == 201) {
+        let allSongData = ""
+        let songsLength = 1
+        let songsCurrentLength = 0
+        let newPlaylistData = JSON.parse(this.responseText)
+
+        db.collection("users")
+            .doc(playlistBeingAdded)
+            .get()
+            .then((doc) => {
+                songsLength = doc.data().songs.length
+                doc.data().songs.forEach(song => {
+                    // Check if the current item is the second last item so the api call will have the correct format.
+                    if (songsCurrentLength === songsLength - 1) {
+                        allSongData += song
+                        songsCurrentLength++
+                        console.log(allSongData)
+
+                        url = TRACKS.replace("{{PlaylistId}}", newPlaylistData.id);
+                        callApi("POST", url + "?uris=" + allSongData, null, handleTrackPostResponse);
+                    }
+                    else {
+                        allSongData += song + ","
+                        console.log(allSongData)
+                        songsCurrentLength++
+                    }
+
+                })
+            })
+    }
+    else if (this.status == 204) {
+        setTimeout(currentlyPlaying, 500);
+    }
+    else {
+        console.log(this.responseText)
+        alert(this.responseText)
+    }
+}
+
+function handleTrackPostResponse() {
+    if (this.status == 201) {
+        console.log(this.responseText);
+        alert("Your new playlist has succesfully been saved.")
+    }
+    else if (this.status == 204) {
+        setTimeout(currentlyPlaying, 500);
+    }
+    else {
+        console.log(this.responseText)
+        alert(this.responseText)
+    }
 }
