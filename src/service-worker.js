@@ -1,7 +1,7 @@
 //Sla cache op in variabele
 const cacheVersie = 'm-app-cache-v1'
 const appCacheFiles = [
-  'styles.css',
+  '',
 ]
 
 self.addEventListener("install", (installing) => {

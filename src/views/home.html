@@ -1,16 +1,15 @@
 <div id="home_container" class="h-screen p-8 bg-gradient-to-b from-faded-purple to-black">
-
     <div id="recomendation_dropdown" class="flex justify-center">
-        <select
+        <select onchange="fetchTracks()"
             class="appearance-none outline-none bg-green rounded-full p-2 px-auto text-lg text-white text-center font-bold w-3/4"
             id="playlists">
-            <!-- TO-DO: Terug zetten bij select na het toepassen van styling onchange="fetchTracks()" -->
+
         </select>
     </div>
 
-    <div id="song_data" class="flex flex-col justify-center">
-        <img id="albumImage" class="pt-4" src="assets/img/album.jpg">
-        <div id="song_text" class="pt-12 pb-4">
+    <div id="song_data" class="flex flex-col pb-4 justify-center">
+        <img id="albumImage" class="py-8" src="assets/img/album.png">
+        <div id="song_text">
             <h1 id="trackTitle" class="font-bold text-2xl text-white">Select a playlist</h1>
             <h2 id="trackArtist" class="text-xl text-gray">Artist</h2>
         </div>
@@ -28,7 +27,17 @@
     <div id="control_container">
         <div class="flex justify-evenly items-center">
             <div class="" onclick="dislike()">
-                <img src="assets/icon/dislike.svg">
+                <svg xmlns="http://www.w3.org/2000/svg" style="overflow: visible" width="30" height="30">
+                    <g data-name="Group 17" fill="none" pointer-events="all"
+                        class="stroke-white active:transition-all duration-500 active:stroke-2 ease-in-out active:stroke-green"
+                        stroke="#fff" stroke-width="1.25">
+                        <g data-name="Ellipse 7">
+                            <circle cx="15" cy="15" r="15" stroke="none" />
+                            <circle cx="15" cy="15" r="14.375" />
+                        </g>
+                        <path data-name="Path 3" d="M25.341 4.587 4.52 25.419" />
+                    </g>
+                </svg>
             </div>
             <div id="play_button" class="grid grid-rows-1 grid-cols-1">
                 <img id="play_button_icon" class="z-10 row-start-1 col-start-1 self-center justify-self-center"
@@ -36,10 +45,9 @@
                 <img class="z-0 row-start-1 col-start-1" src="assets/icon/elipse.svg">
             </div>
             <div class="" onclick="like()">
-                <!-- <img src="assets/icon/like.svg"> -->
                 <svg width="32.991" height="30.081" style="overflow: visible">
                     <path fill="none" pointer-events="all" id="heart-64"
-                        class="text-blue fill-transparent stroke-white hover:transition-all duration-1000 ease-in-out hover:fill-green hover:stroke-green"
+                        class="stroke-white active:transition-all duration-500 active:stroke-2 ease-in-out active:stroke-green"
                         d="M44.309,27.591a9.336,9.336,0,0,0-12.633-.579,1.941,1.941,0,0,1-1.116.4,1.86,1.86,0,0,1-1.121-.4A9.382,9.382,0,0,0,16.778,40.825L27.665,53.572a3.806,3.806,0,0,0,5.789,0l10.853-12.71A9.4,9.4,0,0,0,44.309,27.591Z"
                         transform="translate(-14.063 -24.826)" />
                 </svg>

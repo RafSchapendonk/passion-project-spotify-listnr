@@ -540,12 +540,6 @@ Ensure the default browser behavior of the `hidden` attribute.
   padding-top: 2rem;
   padding-bottom: 2rem;
 }
-.pt-4 {
-  padding-top: 1rem;
-}
-.pt-12 {
-  padding-top: 3rem;
-}
 .pb-4 {
   padding-bottom: 1rem;
 }
@@ -579,27 +573,23 @@ Ensure the default browser behavior of the `hidden` attribute.
   --tw-text-opacity: 1;
   color: rgb(179 179 181 / var(--tw-text-opacity));
 }
-.text-blue {
-  --tw-text-opacity: 1;
-  color: rgb(31 182 255 / var(--tw-text-opacity));
-}
 .outline-none {
   outline: 2px solid transparent;
   outline-offset: 2px;
 }
-.duration-1000 {
-  transition-duration: 1000ms;
+.duration-500 {
+  transition-duration: 500ms;
 }
 .ease-in-out {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
-.hover\:fill-green:hover {
-  fill: #13ce66;
-}
-.hover\:stroke-green:hover {
+.active\:stroke-green:active {
   stroke: #13ce66;
 }
-.hover\:transition-all:hover {
+.active\:stroke-2:active {
+  stroke-width: 2;
+}
+.active\:transition-all:active {
   transition-property: all;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
