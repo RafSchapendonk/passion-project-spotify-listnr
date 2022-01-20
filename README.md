@@ -45,6 +45,7 @@ Run index.html locally with a live server.
 - [X] Save songs to firestore database.
 - [X] Save songs to spotify account.
 - [X] Installable as PWA.
+- [ ] Improve account functionality.
 - [ ] Improve styling.
 - [ ] Reactive UI.
 - [ ] Responsiveness.
