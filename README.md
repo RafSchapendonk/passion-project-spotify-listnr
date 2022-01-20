@@ -25,6 +25,8 @@ Install necessary packages with npm
     
 ## Usage
 
+Insert your own api keys and firestore refference.
+
 Run index.html locally with a live server.
 
 
