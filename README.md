@@ -3,7 +3,6 @@
 This is an app for people who don't like the way spotify recommends music. In the app you choose on of your spotify playlists. Based on the playlist the app will start recommending you new songs. Using a tinder-like control scheme you can choose to like or dislike a song. When you like a song that song will be saved to a playlist in a firestore database. If you wish to have this playlist on your spotify account you can navigate to the library tab and press the playlist you would like to add. 
 
 The app is designed for mobile. If you're viewing it in the browser and want optimal results then you will have to inspect elements, toggle the device toolbar and select iphone x for the correct dimensions.
-[Try the app here](https://i447972.hera.fhict.nl)
 
 ## Badges
 
